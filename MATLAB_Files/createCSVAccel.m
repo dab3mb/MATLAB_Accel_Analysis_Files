@@ -1,10 +1,10 @@
 %% Set Up Data               % -15 to cut off the touching of stop button
-data = importfile("pinkyx30.csv",[1,inf]);
-x = data.x(1:end-15);
-y = data.y(1:end-15);
-z = data.z(1:end-15);
-z = z - 9;                  % Get rid of gravity
-time = data.time(1:end-15); 
+data = importfile("RecordedDataGyro-index30.csv",[1,inf]);
+x = data.x(15:end-15);
+y = data.y(15:end-15);
+z = data.z(15:end-15);
+%z = z - 9;                  % Get rid of gravity
+time = data.time(15:end-15); 
 time = time-time(1);        % Set starting time to 0
 time = time/1e+9;           % Change time to seconds
 
@@ -143,49 +143,47 @@ averageFilteredZ = sum(abs(filteredDataZ))/length(filteredDataZ);
 % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 % Use z data to find 'events' or 'taps'
-[zTimeIndex,zData,sampleZ]= getTaps(filteredDataZ, averageFilteredZ, 20, time, .8, "P");                     % .9 Works for x30's
-sampleZ.Properties.VariableNames = {'FreqRangeHzZ' 'StrongestFreqHzZ' 'LengthSecZ' 'FingerString'};
+[zTimeIndex,zData,sampleZ]= getTaps(filteredDataZ, averageFilteredZ, 28, time, 1.4 , "I");                     % .9 Works for x30's
+sampleZ.Properties.VariableNames = {'FreqDataZ' 'FingerString'};
 
 % Use 'event' or 'tap' times from z (zTime) to get the data for x & y
-sampleX = getXYFromZ(filteredDataX, zTimeIndex, time, "I");
-sampleX.Properties.VariableNames = {'FreqRangeHzX' 'StrongestFreqHzX' 'LengthSecX' 'FingerString'};
-sampleY = getXYFromZ(filteredDataY, zTimeIndex, time, "I");
-sampleY.Properties.VariableNames = {'FreqRangeHzY' 'StrongestFreqHzY' 'LengthSecY' 'FingerString'};
+sampleX = getXYFromZ(filteredDataX, zTimeIndex, time);
+sampleX.Properties.VariableNames = {'FreqDataX'};
+sampleY = getXYFromZ(filteredDataY, zTimeIndex, time);
+sampleY.Properties.VariableNames = {'FreqDataY'};
 
 
 % Create final Model
-% ****IMPORTANT****
-% Currently testing if we get rid of time, will our model be more accurate?
-Final_Model = [sampleX(:,2), sampleY(:,2), sampleZ(:, 2), sampleZ(:, 4)];
+Final_Model = [sampleX(:,1), sampleY(:,1), sampleZ(:, 1), sampleZ(:, 2)];
 
 % Get Variables for graphing
 i = 1;
-zTimeForGraphing = [];
+zTimeIndexForGraphing = [];
 while i <= size(zTimeIndex, 1)
-    zTimeForGraphing = [zTimeForGraphing, zTimeIndex(i, 1:end)];
+    zTimeIndexForGraphing = [zTimeIndexForGraphing, zTimeIndex(i, 1:end)];
     i = i + 1;
 end
 
 %Graph Model
 figure(2)
 hold on
-plot(time(zTimeForGraphing), filteredDataX(zTimeForGraphing),'r')
-plot(time(zTimeForGraphing), filteredDataY(zTimeForGraphing),'g')
-plot(time(zTimeForGraphing), zData,'b')
+plot(time(zTimeIndexForGraphing), filteredDataX(zTimeIndexForGraphing),'r')
+plot(time(zTimeIndexForGraphing), filteredDataY(zTimeIndexForGraphing),'g')
+plot(time(zTimeIndexForGraphing), zData,'b')
 hold off
 title("All Directions, Taps Only")
 xlabel("Time in Seconds")
-ylabel("Y-Direction Acceleration m/s^2")
+ylabel("Acceleration m/s^2")
 
 Final_Model
-writetable(Final_Model,"pinkyTable.csv")
+writetable(Final_Model,"indexTableAccel.csv")
 
 function [indexList, valuesList, samples] = getTaps(direction, averageDirection, chunkSize, time, significance, finger)
     i = 1;
     indexList = [];
     valuesList = [];
     FreqRangeHz = [];
-    StrongestFreqHz = [];
+    freqAcrossEachChunk = {};
     LengthSec = [];
     FingerString = [];
     while i < length(direction)
@@ -225,25 +223,31 @@ function [indexList, valuesList, samples] = getTaps(direction, averageDirection,
             oneSidedSpecChunk = oneSidedSpecChunk(3:end); % Trim off excess data
             frequencyDomainChunk = frequencyDomainChunk(3:end);% Trim off excess data
             
-            %  ----- Get Characteristics for ML -----
-            % Highest point on FFT Graph (strongest frequency?)
-            strongestFreqAmount = max(oneSidedSpecChunk);
-            strongestFreq = frequencyDomainChunk(oneSidedSpecChunk==strongestFreqAmount);
-            % Frequency Range
-            frequencyRange = max(frequencyDomainChunk);
-            % Length in Time
-            lengthTime = timeChunk(end) - timeChunk(1);
-            % Save them to respective arrays
-            FreqRangeHz = [FreqRangeHz; frequencyRange];
-            StrongestFreqHz = [StrongestFreqHz; strongestFreq];
-            LengthSec = [LengthSec; lengthTime];
-            FingerString = [FingerString; finger];
             
-            % Graph it to make sure it's right (Seems to be one decimal
-            % place off to the left?)
-%             plot(frequencyDomainChunk(2:end),oneSidedSpecChunk(2:end))
-%             xlabel("Frequency in Hz")
-%             ylabel("Magnitude (decibels)")
+            % ----- Put Chunk Freq Data into a , put that in -----
+            domainAndFrequency = [frequencyDomainChunk',oneSidedSpecChunk];
+            freqAcrossEachChunk{size(freqAcrossEachChunk,1)+1,1} = domainAndFrequency;
+            
+            size(freqAcrossEachChunk)
+            
+            
+%             %  ----- Get Characteristics for ML -----
+% %                So this was actually incorrect! I can just feed my ML ALL
+% %                the data from Accelerator
+%             % Highest point on FFT Graph (strongest frequency?)
+%             strongestFreqAmount = max(oneSidedSpecChunk);
+%             strongestFreq = frequencyDomainChunk(oneSidedSpecChunk==strongestFreqAmount);
+%             % Frequency Range
+%             frequencyRange = max(frequencyDomainChunk);
+%             % Length in Time
+%             lengthTime = timeChunk(end) - timeChunk(1);
+%             % Save them to respective arrays
+%             FreqRangeHz = [FreqRangeHz; frequencyRange];
+%             StrongestFreqHz = [StrongestFreqHz; strongestFreq];
+%             LengthSec = [LengthSec; lengthTime];
+             FingerString = [FingerString; finger];
+            
+            
         end
         % If we saved a chunk, make sure we don't read the chunk again
         if (ending > 0)
@@ -252,14 +256,11 @@ function [indexList, valuesList, samples] = getTaps(direction, averageDirection,
             i = i + 1;
         end
     end
-    samples = table(FreqRangeHz, StrongestFreqHz, LengthSec, FingerString);
+    samples = table(freqAcrossEachChunk, FingerString);
 end
 
-function samples = getXYFromZ(direction, zTimeDataIndex, time,  finger)
-    FreqRangeHz = [];
-    StrongestFreqHz = [];
-    LengthSec = [];
-    FingerString = [];
+function samples = getXYFromZ(direction, zTimeDataIndex, time)
+    freqAcrossEachChunk = {};
     startChunkIndex = 1;
     endChunkIndex = size(zTimeDataIndex, 1);
     row = [];
@@ -281,22 +282,12 @@ function samples = getXYFromZ(direction, zTimeDataIndex, time,  finger)
         oneSidedSpecChunk = oneSidedSpecChunk(3:end);       % Trim off excess data
         frequencyDomainChunk = frequencyDomainChunk(3:end); % Trim off excess data
 
-        %  ----- Get Characteristics for ML -----
-        % Highest point on FFT Graph (strongest frequency?)
-        strongestFreqAmount = max(oneSidedSpecChunk);
-        strongestFreq = frequencyDomainChunk(oneSidedSpecChunk==strongestFreqAmount);
-        % Frequency Range
-        frequencyRange = max(frequencyDomainChunk);
-        % Length in Time
-        lengthTime = timeChunk(end) - timeChunk(1);
-        % Save them to respective arrays
-        FreqRangeHz = [FreqRangeHz; frequencyRange];
-        StrongestFreqHz = [StrongestFreqHz; strongestFreq];
-        LengthSec = [LengthSec; lengthTime];
-        FingerString = [FingerString; finger];
-%         
-        %Go to next chunk
+        domainAndFrequency = [frequencyDomainChunk',oneSidedSpecChunk];
+        freqAcrossEachChunk{size(freqAcrossEachChunk,1)+1,1} = domainAndFrequency;
+
+        size(freqAcrossEachChunk)
+
         rowNumber = rowNumber + 1;
     end
-    samples = table(FreqRangeHz, StrongestFreqHz, LengthSec, FingerString);
+    samples = table(freqAcrossEachChunk);
 end
