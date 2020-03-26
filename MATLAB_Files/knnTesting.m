@@ -1,10 +1,25 @@
 %% Set Up Training Data
 % Import our models and combine into one data set
-pinkyTable = importModel("pinkyTable.csv");             %Poor naming of function, should be "importTable"
-ringTable = importModel("ringTable.csv");
-middleTable = importModel("middleTable.csv");
-indexTable = importModel("indexTable.csv");
-trainingTable = [pinkyTable; ringTable; middleTable; indexTable];
+
+% load('accelDataindex30.mat');
+% load('accelDatamiddle30.mat')
+load('accelDataring30.mat')
+load('accelDatapinky30.mat')
+% load('gyroDataindex30.mat');
+% load('gyroDatamiddle30.mat')
+load('gyroDataring30.mat')
+load('gyroDatapinky30.mat')
+
+
+
+%indexTable = [Final_Model_Accel_INDEX30(:,1:end-1), Final_Model_Gyro_INDEX30];
+%middleTable = [Final_Model_Accel_MIDDLE30(:,1:end-1), Final_Model_Gyro_MIDDLE30];
+ringTable = [Final_Model_Accel_RING30(:,1:end-1), Final_Model_Gyro_RING30];
+pinkyTable = [Final_Model_Accel_PINKY30(:,1:end-1), Final_Model_Gyro_PINKY30];
+
+trainingTable = [pinkyTable; ringTable;];
+temp= trainingTable(:,{'AccelFreqDataX','AccelFreqDataY','AccelFreqDataZ', 'GyroFreqDataX', 'GyroFreqDataY', 'GyroFreqDataZ'}) ;
+temp = temp(:,:) % Now a cell array
 
 % Rn the data looks really bad? Like I don't see any differences in it :/
 % scatter(1:30, pinkyModel.StrongestFreqHzZ,'b','*')

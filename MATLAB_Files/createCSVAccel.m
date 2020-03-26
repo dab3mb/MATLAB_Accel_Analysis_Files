@@ -1,9 +1,11 @@
 %% Set Up Data               % -15 to cut off the touching of stop button
-data = importfile("RecordedDataGyro-index30.csv",[1,inf]);
+fingerNumber = "ring30";
+whichFinger  = "r";
+data = importfile("RecordedDataAccel-" + fingerNumber +  ".csv",[1,inf]);
 x = data.x(15:end-15);
 y = data.y(15:end-15);
 z = data.z(15:end-15);
-%z = z - 9;                  % Get rid of gravity
+z = z - 9;                  % Get rid of gravity
 time = data.time(15:end-15); 
 time = time-time(1);        % Set starting time to 0
 time = time/1e+9;           % Change time to seconds
@@ -143,18 +145,18 @@ averageFilteredZ = sum(abs(filteredDataZ))/length(filteredDataZ);
 % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 % Use z data to find 'events' or 'taps'
-[zTimeIndex,zData,sampleZ]= getTaps(filteredDataZ, averageFilteredZ, 28, time, 1.4 , "I");                     % .9 Works for x30's
-sampleZ.Properties.VariableNames = {'FreqDataZ' 'FingerString'};
+[zTimeIndex,zData,sampleZ]= getTaps(filteredDataZ, averageFilteredZ, 28, time, 1.7, whichFinger);                  
+sampleZ.Properties.VariableNames = {'AccelFreqDataZ' 'AccelFingerString'};
 
 % Use 'event' or 'tap' times from z (zTime) to get the data for x & y
 sampleX = getXYFromZ(filteredDataX, zTimeIndex, time);
-sampleX.Properties.VariableNames = {'FreqDataX'};
+sampleX.Properties.VariableNames = {'AccelFreqDataX'};
 sampleY = getXYFromZ(filteredDataY, zTimeIndex, time);
-sampleY.Properties.VariableNames = {'FreqDataY'};
+sampleY.Properties.VariableNames = {'AccelFreqDataY'};
 
 
 % Create final Model
-Final_Model = [sampleX(:,1), sampleY(:,1), sampleZ(:, 1), sampleZ(:, 2)];
+Final_Model_Accel_RING30 = [sampleX(:,1), sampleY(:,1), sampleZ(:, 1), sampleZ(:, 2)];
 
 % Get Variables for graphing
 i = 1;
@@ -175,8 +177,11 @@ title("All Directions, Taps Only")
 xlabel("Time in Seconds")
 ylabel("Acceleration m/s^2")
 
-Final_Model
-writetable(Final_Model,"indexTableAccel.csv")
+
+% ---- Write our final file -----
+Final_Model_Accel_RING30
+fileName = 'accelData'+ fingerNumber;
+save(fileName , 'Final_Model_Accel_RING30')
 
 function [indexList, valuesList, samples] = getTaps(direction, averageDirection, chunkSize, time, significance, finger)
     i = 1;
@@ -225,8 +230,8 @@ function [indexList, valuesList, samples] = getTaps(direction, averageDirection,
             
             
             % ----- Put Chunk Freq Data into a , put that in -----
-            domainAndFrequency = [frequencyDomainChunk',oneSidedSpecChunk];
-            freqAcrossEachChunk{size(freqAcrossEachChunk,1)+1,1} = domainAndFrequency;
+            %domainAndFrequency = [frequencyDomainChunk',oneSidedSpecChunk];
+            freqAcrossEachChunk{size(freqAcrossEachChunk,1)+1,1} = oneSidedSpecChunk;
             
             size(freqAcrossEachChunk)
             
@@ -282,8 +287,8 @@ function samples = getXYFromZ(direction, zTimeDataIndex, time)
         oneSidedSpecChunk = oneSidedSpecChunk(3:end);       % Trim off excess data
         frequencyDomainChunk = frequencyDomainChunk(3:end); % Trim off excess data
 
-        domainAndFrequency = [frequencyDomainChunk',oneSidedSpecChunk];
-        freqAcrossEachChunk{size(freqAcrossEachChunk,1)+1,1} = domainAndFrequency;
+        %domainAndFrequency = [frequencyDomainChunk',oneSidedSpecChunk];
+        freqAcrossEachChunk{size(freqAcrossEachChunk,1)+1,1} = oneSidedSpecChunk;
 
         size(freqAcrossEachChunk)
 

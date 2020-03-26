@@ -1,9 +1,10 @@
 %% Set Up Data               % -15 to cut off the touching of stop button
-data = importfile("RecordedDataGyro-index30.csv",[1,inf]);
+fingerNumber = "ring30";
+whichFinger  = "r";
+data = importfile("RecordedDataGyro-" + fingerNumber +  ".csv",[1,inf]);
 x = data.x(15:end-15);
 y = data.y(15:end-15);
 z = data.z(15:end-15);
-%z = z - 9;                  % Get rid of gravity
 time = data.time(15:end-15); 
 time = time-time(1);        % Set starting time to 0
 time = time/1e+9;           % Change time to seconds
@@ -15,9 +16,9 @@ plot(time, y,'g')
 plot(time, z,'b')
 hold off
 
-title("Accel Values and Time")
+title("Rotation Values and Time")
 xlabel("Time in Seconds")
-ylabel("Acceleration m/s^2")
+ylabel("Rate of rotation around the axes in rad/s")
 
 
 
@@ -46,7 +47,7 @@ hold off
 
 title("Butterworth Filter")
 xlabel("Time in Seconds")
-ylabel("Y-Direction Acceleration m/s^2")
+ylabel("Rate of rot. rad/s")
 
 samplingFrequency = length(y)/max(time); % in Hz
 
@@ -134,8 +135,8 @@ ylabel("Magnitude (decibels)")
 %% Get Taps
 
 % averageFilteredX = sum(abs(filteredDataX))/length(filteredDataX);
-% averageFilteredY = sum(abs(filteredDataY))/length(filteredDataY);    
-averageFilteredZ = sum(abs(filteredDataZ))/length(filteredDataZ);    
+averageFilteredY = sum(abs(filteredDataY))/length(filteredDataY);    
+% averageFilteredZ = sum(abs(filteredDataZ))/length(filteredDataZ);    
 
 % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 % If I have time later, make it find the significance based on the number
@@ -143,40 +144,46 @@ averageFilteredZ = sum(abs(filteredDataZ))/length(filteredDataZ);
 % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 % Use z data to find 'events' or 'taps'
-[zTimeIndex,zData,sampleZ]= getTaps(filteredDataZ, averageFilteredZ, 28, time, 1.4 , "I");                     % .9 Works for x30's
-sampleZ.Properties.VariableNames = {'FreqDataZ' 'FingerString'};
+[yTimeIndex,yData,sampleY]= getTaps(filteredDataY, averageFilteredY, 28, time, 1.83, whichFinger);                  
+sampleY.Properties.VariableNames = {'GyroFreqDataY' 'FingerString'};
 
 % Use 'event' or 'tap' times from z (zTime) to get the data for x & y
-sampleX = getXYFromZ(filteredDataX, zTimeIndex, time);
-sampleX.Properties.VariableNames = {'FreqDataX'};
-sampleY = getXYFromZ(filteredDataY, zTimeIndex, time);
-sampleY.Properties.VariableNames = {'FreqDataY'};
+sampleZ = getXZFromY(filteredDataZ, yTimeIndex, time);
+sampleZ.Properties.VariableNames = {'GyroFreqDataZ'};
+sampleX = getXZFromY(filteredDataX, yTimeIndex, time);
+sampleX.Properties.VariableNames = {'GyroFreqDataX'};
 
 
 % Create final Model
-Final_Model = [sampleX(:,1), sampleY(:,1), sampleZ(:, 1), sampleZ(:, 2)];
+Final_Model_Gyro_RING30 = [sampleX(:,1), sampleY(:,1), sampleZ(:, 1), sampleY(:, 2)];
 
 % Get Variables for graphing
 i = 1;
-zTimeIndexForGraphing = [];
-while i <= size(zTimeIndex, 1)
-    zTimeIndexForGraphing = [zTimeIndexForGraphing, zTimeIndex(i, 1:end)];
+TimeIndexForGraphing = [];
+while i <= size(yTimeIndex, 1)
+    TimeIndexForGraphing = [TimeIndexForGraphing, yTimeIndex(i, 1:end)];
     i = i + 1;
 end
+
+
 
 %Graph Model
 figure(2)
 hold on
-plot(time(zTimeIndexForGraphing), filteredDataX(zTimeIndexForGraphing),'r')
-plot(time(zTimeIndexForGraphing), filteredDataY(zTimeIndexForGraphing),'g')
-plot(time(zTimeIndexForGraphing), zData,'b')
+plot(time(TimeIndexForGraphing), yData,'r')
+plot(time(TimeIndexForGraphing), filteredDataX(TimeIndexForGraphing),'g')
+plot(time(TimeIndexForGraphing), filteredDataZ(TimeIndexForGraphing),'b')
 hold off
 title("All Directions, Taps Only")
 xlabel("Time in Seconds")
 ylabel("Acceleration m/s^2")
 
-Final_Model
-writetable(Final_Model,"indexTableAccel.csv")
+
+
+
+% ---- Write our final file -----
+fileName = 'gyroData'+ fingerNumber;
+save(fileName , 'Final_Model_Gyro_RING30')
 
 function [indexList, valuesList, samples] = getTaps(direction, averageDirection, chunkSize, time, significance, finger)
     i = 1;
@@ -225,27 +232,11 @@ function [indexList, valuesList, samples] = getTaps(direction, averageDirection,
             
             
             % ----- Put Chunk Freq Data into a , put that in -----
-            domainAndFrequency = [frequencyDomainChunk',oneSidedSpecChunk];
-            freqAcrossEachChunk{size(freqAcrossEachChunk,1)+1,1} = domainAndFrequency;
+            %domainAndFrequency = [frequencyDomainChunk',oneSidedSpecChunk];
+            freqAcrossEachChunk{size(freqAcrossEachChunk,1)+1,1} = oneSidedSpecChunk;
             
             size(freqAcrossEachChunk)
-            
-            
-%             %  ----- Get Characteristics for ML -----
-% %                So this was actually incorrect! I can just feed my ML ALL
-% %                the data from Accelerator
-%             % Highest point on FFT Graph (strongest frequency?)
-%             strongestFreqAmount = max(oneSidedSpecChunk);
-%             strongestFreq = frequencyDomainChunk(oneSidedSpecChunk==strongestFreqAmount);
-%             % Frequency Range
-%             frequencyRange = max(frequencyDomainChunk);
-%             % Length in Time
-%             lengthTime = timeChunk(end) - timeChunk(1);
-%             % Save them to respective arrays
-%             FreqRangeHz = [FreqRangeHz; frequencyRange];
-%             StrongestFreqHz = [StrongestFreqHz; strongestFreq];
-%             LengthSec = [LengthSec; lengthTime];
-             FingerString = [FingerString; finger];
+            FingerString = [FingerString; finger];
             
             
         end
@@ -259,7 +250,7 @@ function [indexList, valuesList, samples] = getTaps(direction, averageDirection,
     samples = table(freqAcrossEachChunk, FingerString);
 end
 
-function samples = getXYFromZ(direction, zTimeDataIndex, time)
+function samples = getXZFromY(direction, zTimeDataIndex, time)
     freqAcrossEachChunk = {};
     startChunkIndex = 1;
     endChunkIndex = size(zTimeDataIndex, 1);
@@ -282,8 +273,8 @@ function samples = getXYFromZ(direction, zTimeDataIndex, time)
         oneSidedSpecChunk = oneSidedSpecChunk(3:end);       % Trim off excess data
         frequencyDomainChunk = frequencyDomainChunk(3:end); % Trim off excess data
 
-        domainAndFrequency = [frequencyDomainChunk',oneSidedSpecChunk];
-        freqAcrossEachChunk{size(freqAcrossEachChunk,1)+1,1} = domainAndFrequency;
+        %domainAndFrequency = [frequencyDomainChunk',oneSidedSpecChunk];
+        freqAcrossEachChunk{size(freqAcrossEachChunk,1)+1,1} = oneSidedSpecChunk;
 
         size(freqAcrossEachChunk)
 
