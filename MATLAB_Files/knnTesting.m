@@ -1,25 +1,23 @@
 %% Set Up Training Data
 % Import our models and combine into one data set
 
-% load('accelDataindex30.mat');
-% load('accelDatamiddle30.mat')
+load('accelDataindex30.mat');
+load('accelDatamiddle30.mat')
 load('accelDataring30.mat')
 load('accelDatapinky30.mat')
-% load('gyroDataindex30.mat');
-% load('gyroDatamiddle30.mat')
+load('gyroDataindex30.mat');
+load('gyroDatamiddle30.mat')
 load('gyroDataring30.mat')
 load('gyroDatapinky30.mat')
 
 
+indexTable = [removevars(Final_Model_Accel_INDEX30, {'Finger'}),Final_Model_GYRO_INDEX30];
+middleTable = [removevars(Final_Model_Accel_MIDDLE30, {'Finger'}),Final_Model_GYRO_MIDDLE30];
+ringTable = [removevars(Final_Model_Accel_RING30, {'Finger'}),Final_Model_GYRO_RING30];
+pinkyTable = [removevars(Final_Model_Accel_PINKY30, {'Finger'}),Final_Model_GYRO_PINKY30];
 
-%indexTable = [Final_Model_Accel_INDEX30(:,1:end-1), Final_Model_Gyro_INDEX30];
-%middleTable = [Final_Model_Accel_MIDDLE30(:,1:end-1), Final_Model_Gyro_MIDDLE30];
-ringTable = [Final_Model_Accel_RING30(:,1:end-1), Final_Model_Gyro_RING30];
-pinkyTable = [Final_Model_Accel_PINKY30(:,1:end-1), Final_Model_Gyro_PINKY30];
+trainingTable = [indexTable; middleTable; ringTable; pinkyTable];
 
-trainingTable = [pinkyTable; ringTable;];
-temp= trainingTable(:,{'AccelFreqDataX','AccelFreqDataY','AccelFreqDataZ', 'GyroFreqDataX', 'GyroFreqDataY', 'GyroFreqDataZ'}) ;
-temp = temp(:,:) % Now a cell array
 
 % Rn the data looks really bad? Like I don't see any differences in it :/
 % scatter(1:30, pinkyModel.StrongestFreqHzZ,'b','*')
@@ -32,20 +30,35 @@ temp = temp(:,:) % Now a cell array
 %% MATLAB Create model and find best k and distance 
 % https://www.mathworks.com/help/stats/fitcknn.html#namevaluepairarguments
 rng(1)
-knnModel = fitcknn(trainingTable, 'FingerString','OptimizeHyperparameters','auto',...
+knnModel = fitcknn(trainingTable, 'Finger','OptimizeHyperparameters','auto',...
     'HyperparameterOptimizationOptions',...
     struct('AcquisitionFunctionName','expected-improvement-plus'));
 %% Resubstiution and Cross Evaluation Loss
 % Test model for resub loss and cross eval loss
-resubLossAmount = resubLoss(knnModel);                         % Roughly 14% Loss <-- Is this okay? 
+resubLossAmount = resubLoss(knnModel);                         % Roughly 1.6%
 crossValidatedClassifier = crossval(knnModel);                  
-crossValLossValue = kfoldLoss(crossValidatedClassifier);       % Roughly 34% Loss <-- Is this okay?
+crossValLossValue = kfoldLoss(crossValidatedClassifier);       % Roughly 3.3% Loss <-- Is this okay?
 
 %% Testing Model
-pinkyRingMiddleIndexTest = importModel("TESTFILE1_FixedClasses.csv");
+pinkyRingMiddleIndexTest = [removevars(Final_Model_Accel_TESTING16, {'Finger'}),Final_Model_GYRO_TESTING16];
 [label, score, cost] = predict(knnModel, pinkyRingMiddleIndexTest);
-confusionchart(pinkyRingMiddleIndexTest.FingerString,label);            % 4/16 correct??? 75 % Wrong
-
+confusionchart({'p','p','p','p','r','r','r','r','m','m','m','m','i','i','i','i'}, label);            % 81% Correct!
+%     {'p'} p 
+%     {'p'} p 
+%     {'p'} p 
+%     {'p'} p 
+%     {'p'} r x
+%     {'r'} r 
+%     {'r'} r 
+%     {'p'} r x
+%     {'i'} m x
+%     {'m'} m 
+%     {'m'} m 
+%     {'m'} m 
+%     {'i'} i 
+%     {'i'} i 
+%     {'i'} i 
+%     {'i'} i  
 
 
 

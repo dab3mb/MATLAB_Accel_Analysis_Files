@@ -1,6 +1,6 @@
 %% Set Up Data               % -15 to cut off the touching of stop button
-fingerNumber = "ring30";
-whichFinger  = "r";
+fingerNumber = "pinky30";
+whichFinger  = "p";
 data = importfile("RecordedDataGyro-" + fingerNumber +  ".csv",[1,inf]);
 x = data.x(15:end-15);
 y = data.y(15:end-15);
@@ -134,8 +134,8 @@ ylabel("Magnitude (decibels)")
 
 %% Get Taps
 
-% averageFilteredX = sum(abs(filteredDataX))/length(filteredDataX);
-averageFilteredY = sum(abs(filteredDataY))/length(filteredDataY);    
+averageFilteredX = sum(abs(filteredDataX))/length(filteredDataX);
+% averageFilteredY = sum(abs(filteredDataY))/length(filteredDataY);    
 % averageFilteredZ = sum(abs(filteredDataZ))/length(filteredDataZ);    
 
 % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -144,53 +144,48 @@ averageFilteredY = sum(abs(filteredDataY))/length(filteredDataY);
 % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 % Use z data to find 'events' or 'taps'
-[yTimeIndex,yData,sampleY]= getTaps(filteredDataY, averageFilteredY, 28, time, 1.83, whichFinger);                  
-sampleY.Properties.VariableNames = {'GyroFreqDataY' 'FingerString'};
+[xTimeIndex,xData,sampleX]= getTaps(filteredDataX, averageFilteredX, 28, time, 1.8, "_gyro_x", whichFinger);                
 
 % Use 'event' or 'tap' times from z (zTime) to get the data for x & y
-sampleZ = getXZFromY(filteredDataZ, yTimeIndex, time);
-sampleZ.Properties.VariableNames = {'GyroFreqDataZ'};
-sampleX = getXZFromY(filteredDataX, yTimeIndex, time);
-sampleX.Properties.VariableNames = {'GyroFreqDataX'};
-
+sampleZ = getZYFromX(filteredDataZ, xTimeIndex, time, "_gyro_z");
+sampleY = getZYFromX(filteredDataY, xTimeIndex, time, "_gyro_y");
 
 % Create final Model
-Final_Model_Gyro_RING30 = [sampleX(:,1), sampleY(:,1), sampleZ(:, 1), sampleY(:, 2)];
-
+Final_Model_GYRO_PINKY30 = [sampleZ(:,1:end), sampleY(:,1:end), sampleX(:, 1:end)];
+Final_Model_GYRO_PINKY30
 % Get Variables for graphing
 i = 1;
-TimeIndexForGraphing = [];
-while i <= size(yTimeIndex, 1)
-    TimeIndexForGraphing = [TimeIndexForGraphing, yTimeIndex(i, 1:end)];
+xTimeIndexForGraphing = [];
+while i <= size(xTimeIndex, 1)
+    xTimeIndexForGraphing = [xTimeIndexForGraphing, xTimeIndex(i, 1:end)];
     i = i + 1;
 end
-
-
 
 %Graph Model
 figure(2)
 hold on
-plot(time(TimeIndexForGraphing), yData,'r')
-plot(time(TimeIndexForGraphing), filteredDataX(TimeIndexForGraphing),'g')
-plot(time(TimeIndexForGraphing), filteredDataZ(TimeIndexForGraphing),'b')
+plot(time(xTimeIndexForGraphing), filteredDataZ(xTimeIndexForGraphing),'r')
+plot(time(xTimeIndexForGraphing), filteredDataY(xTimeIndexForGraphing),'g')
+plot(time(xTimeIndexForGraphing), xData,'b')
 hold off
 title("All Directions, Taps Only")
 xlabel("Time in Seconds")
-ylabel("Acceleration m/s^2")
+ylabel("Rotation Speed ")
+
 
 
 
 
 % ---- Write our final file -----
 fileName = 'gyroData'+ fingerNumber;
-save(fileName , 'Final_Model_Gyro_RING30')
+save(fileName , 'Final_Model_GYRO_PINKY30')
 
-function [indexList, valuesList, samples] = getTaps(direction, averageDirection, chunkSize, time, significance, finger)
+function [indexList, valuesList, samples] = getTaps(direction, averageDirection, chunkSize, time, significance, fingerAndDirection, justFinger)
     i = 1;
     indexList = [];
     valuesList = [];
     FreqRangeHz = [];
-    freqAcrossEachChunk = {};
+    freqAcrossEachChunk = [];
     LengthSec = [];
     FingerString = [];
     while i < length(direction)
@@ -211,7 +206,7 @@ function [indexList, valuesList, samples] = getTaps(direction, averageDirection,
                     ending = ending - 1;
                 end
             end
-            % Add to our lists
+            % Add to our index list
             indexList = [indexList; begin:ending];
             for j=begin:ending
                 valuesList = [valuesList, direction(j)];
@@ -232,13 +227,15 @@ function [indexList, valuesList, samples] = getTaps(direction, averageDirection,
             
             
             % ----- Put Chunk Freq Data into a , put that in -----
-            %domainAndFrequency = [frequencyDomainChunk',oneSidedSpecChunk];
-            freqAcrossEachChunk{size(freqAcrossEachChunk,1)+1,1} = oneSidedSpecChunk;
+            freqAcrossEachChunk = [freqAcrossEachChunk; oneSidedSpecChunk'];
             
-            size(freqAcrossEachChunk)
-            FingerString = [FingerString; finger];
+           
             
-            
+             ii = 0;
+             while (ii < size(oneSidedSpecChunk,1 ))
+                FingerString = [FingerString; fingerAndDirection];
+                ii = ii + 1;
+             end
         end
         % If we saved a chunk, make sure we don't read the chunk again
         if (ending > 0)
@@ -247,11 +244,21 @@ function [indexList, valuesList, samples] = getTaps(direction, averageDirection,
             i = i + 1;
         end
     end
-    samples = table(freqAcrossEachChunk, FingerString);
+    % ----- Format Table -----
+    tableLabels = [];
+    for i = 1:size(freqAcrossEachChunk, 2)
+        tableLabels = [tableLabels, fingerAndDirection+int2str(i)];
+    end
+    tableLabels = [tableLabels, "Finger"];
+    samples = array2table(freqAcrossEachChunk);
+    samples = addvars(samples, repelem(justFinger, size(freqAcrossEachChunk, 1))');
+    samples.Properties.VariableNames = tableLabels(1:end);
+    samples
+    
 end
 
-function samples = getXZFromY(direction, zTimeDataIndex, time)
-    freqAcrossEachChunk = {};
+function samples = getZYFromX(direction, zTimeDataIndex, time, fingerAndDirection)
+    freqAcrossEachChunk = [];
     startChunkIndex = 1;
     endChunkIndex = size(zTimeDataIndex, 1);
     row = [];
@@ -274,11 +281,17 @@ function samples = getXZFromY(direction, zTimeDataIndex, time)
         frequencyDomainChunk = frequencyDomainChunk(3:end); % Trim off excess data
 
         %domainAndFrequency = [frequencyDomainChunk',oneSidedSpecChunk];
-        freqAcrossEachChunk{size(freqAcrossEachChunk,1)+1,1} = oneSidedSpecChunk;
+        freqAcrossEachChunk = [freqAcrossEachChunk; oneSidedSpecChunk'];
 
-        size(freqAcrossEachChunk)
 
         rowNumber = rowNumber + 1;
     end
-    samples = table(freqAcrossEachChunk);
+    % ----- Format Table -----
+    tableLabels = [];
+    for i = 1:size(freqAcrossEachChunk, 2)
+        tableLabels = [tableLabels, fingerAndDirection+int2str(i)];
+    end
+    samples = array2table(freqAcrossEachChunk);
+    samples.Properties.VariableNames = tableLabels(1:end);
+    samples
 end

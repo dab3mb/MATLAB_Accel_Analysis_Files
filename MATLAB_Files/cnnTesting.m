@@ -1,94 +1,111 @@
 %% Set Up Training Data
 % Import our models and combine into one data set
-pinkyData = importfile("Pinkyx30.csv",[1,inf]);
-ringData = importfile("Ringx30.csv",[1,inf]);
-middleData = importfile("Middlex30.csv",[1,inf]);
-indexData = importfile("Indexx30.csv",[1,inf]);
-[pinkyX, pinkyY, pinkyZ, pinkyTime] = setUp(pinkyData);
-[ringX, ringY, ringZ, ringTime] = setUp(ringData);
-[middleX, middleY, middleZ, middleTime] = setUp(middleData);
-[indexX, indexY, indexZ, indexTime] = setUp(indexData);
+pinkyDataAccel = importfile("RecordedDataAccel-pinky30.csv",[1,inf]);
+ringDataAccel = importfile("RecordedDataAccel-ring30.csv",[1,inf]);
+middleDataAccel = importfile("RecordedDataAccel-middle30.csv",[1,inf]);
+indexDataAccel = importfile("RecordedDataAccel-index30.csv",[1,inf]);
+pinkyDataGyro = importfile("RecordedDataGyro-pinky30.csv",[1,inf]);
+ringDataGyro = importfile("RecordedDataGyro-ring30.csv",[1,inf]);
+middleDataGyro = importfile("RecordedDataGyro-middle30.csv",[1,inf]);
+indexDataGyro = importfile("RecordedDataGyro-index30.csv",[1,inf]);
+
+[pinkyXAccel, pinkyYAccel, pinkyZAccel, pinkyTimeAccel] = setUpAccel(pinkyDataAccel);
+[ringXAccel, ringYAccel, ringZAccel, ringTimeAccel] = setUpAccel(ringDataAccel);
+[middleXAccel, middleYAccel, middleZAccel, middleTimeAccel] = setUpAccel(middleDataAccel);
+[indexXAccel, indexYAccel, indexZAccel, indexTimeAccel] = setUpAccel(indexDataAccel);
+
+[pinkyXGyro, pinkyYGyro, pinkyZGyro, pinkyTimeGyro] = setUpGyro(pinkyDataGyro);
+[ringXGyro, ringYGyro, ringZGyro, ringTimeGyro] = setUpGyro(ringDataGyro);
+[middleXGyro, middleYGyro, middleZGyro, middleTimeGyro] = setUpGyro(middleDataGyro);
+[indexXGyro,indexYGyro,indexZGyro, indexTimeGyro] = setUpGyro(indexDataGyro);
+
 
 %% Plot Raw Data
 figure(1)
-subplot(2,2,1) , plot(pinkyTime, pinkyX,'r')
+subplot(2,2,1) , plot(pinkyTimeAccel, pinkyXAccel,'r')
 hold on 
-plot(pinkyTime, pinkyY,'g')
-plot(pinkyTime, pinkyZ,'b')
+plot(pinkyTimeAccel, pinkyYAccel,'g')
+plot(pinkyTimeAccel, pinkyZAccel,'b')
 hold off
 title("Pinky Accel Values and Time")
 xlabel("Time in Seconds")
 ylabel("Acceleration m/s^2")
 
-subplot(2,2,2), plot(ringTime, ringX,'r')
+subplot(2,2,2), plot(ringTimeAccel, ringXAccel,'r')
 hold on 
-plot(ringTime, ringY,'g')
-plot(ringTime, ringZ,'b')
+plot(ringTimeAccel, ringYAccel,'g')
+plot(ringTimeAccel, ringZAccel,'b')
 hold off
 title("Ring Accel Values and Time")
 xlabel("Time in Seconds")
 ylabel("Acceleration m/s^2")
 
-subplot(2,2,3) , plot(middleTime, middleX,'r')
+subplot(2,2,3) , plot(middleTimeAccel, middleXAccel,'r')
 hold on 
-plot(middleTime, middleY,'g')
-plot(middleTime, middleZ,'b')
+plot(middleTimeAccel, middleYAccel,'g')
+plot(middleTimeAccel, middleZAccel,'b')
 hold off
 title("Middle Accel Values and Time")
 xlabel("Time in Seconds")
 ylabel("Acceleration m/s^2")
 
-subplot(2,2,4) , plot(indexTime, indexX,'r')
+subplot(2,2,4) , plot(indexTimeAccel, indexXAccel,'r')
 hold on 
-plot(indexTime, indexY,'g')
-plot(indexTime, indexZ,'b')
+plot(indexTimeAccel, indexYAccel,'g')
+plot(indexTimeAccel, indexZAccel,'b')
 hold off
 title("Index Accel Values and Time")
 xlabel("Time in Seconds")
 ylabel("Acceleration m/s^2")
 
 
-%% Apply and Plot Butterworth filter
+%% Apply Butterworth filter
 % https://www.mathworks.com/help/signal/ref/butter.html#bucse3u-Wn
 
-[pinkyFilteredDataX, pinkyFilteredDataY, pinkyFilteredDataZ] = applyButter(pinkyX,pinkyY, pinkyZ);
-[ringFilteredDataX, ringFilteredDataY, ringFilteredDataZ] = applyButter(ringX,ringY, ringZ);
-[middleFilteredDataX, middleFilteredDataY, middleFilteredDataZ] = applyButter(middleX,middleY, middleZ);
-[indexFilteredDataX, indexFilteredDataY, indexFilteredDataZ] = applyButter(indexX,indexY, indexZ);
+[pinkyFilteredDataXAccel, pinkyFilteredDataYAccel, pinkyFilteredDataZAccel] = applyButter(pinkyXAccel,pinkyYAccel, pinkyZAccel);
+[ringFilteredDataXAccel, ringFilteredDataYAccel, ringFilteredDataZAccel] = applyButter(ringXAccel,ringYAccel, ringZAccel);
+[middleFilteredDataXAccel, middleFilteredDataYAccel, middleFilteredDataZAccel] = applyButter(middleXAccel,middleYAccel, middleZAccel);
+[indexFilteredDataXAccel, indexFilteredDataYAccel, indexFilteredDataZAccel] = applyButter(indexXAccel,indexYAccel, indexZAccel);
+
+[pinkyFilteredDataXGyro, pinkyFilteredDataYGyro, pinkyFilteredDataZGyro] = applyButter(pinkyXGyro,pinkyYGyro, pinkyZGyro);
+[ringFilteredDataXGyro, ringFilteredDataYGyro, ringFilteredDataZGyro] = applyButter(ringXGyro,ringYGyro, ringZGyro);
+[middleFilteredDataXGyro, middleFilteredDataYGyro, middleFilteredDataZGyro] = applyButter(middleXGyro,middleYGyro, middleZGyro);
+[indexFilteredDataXGyro, indexFilteredDataYGyro, indexFilteredDataZGyro] = applyButter(indexXGyro,indexYGyro, indexZGyro);
+
 
 %% Plot Filtered Data
 figure(2)
-subplot(2,2,1) , plot(pinkyTime(3:end),pinkyFilteredDataX, 'r')
+subplot(2,2,1) , plot(pinkyTimeAccel(3:end),pinkyFilteredDataXAccel, 'r')
 hold on
-plot(pinkyTime(3:end),pinkyFilteredDataY, 'g')
-plot(pinkyTime(3:end),pinkyFilteredDataZ, 'b')
+plot(pinkyTimeAccel(3:end),pinkyFilteredDataYAccel, 'g')
+plot(pinkyTimeAccel(3:end),pinkyFilteredDataZAccel, 'b')
 hold off
 title("Pinky with Butterworth Filter")
 xlabel("Time in Seconds")
 ylabel("Y-Direction Acceleration m/s^2")
 
-subplot(2,2,2) , plot(ringTime(3:end),ringFilteredDataX, 'r')
+subplot(2,2,2) , plot(ringTimeAccel(3:end),ringFilteredDataXAccel, 'r')
 hold on
-plot(ringTime(3:end),ringFilteredDataY, 'g')
-plot(ringTime(3:end),ringFilteredDataZ, 'b')
+plot(ringTimeAccel(3:end),ringFilteredDataYAccel, 'g')
+plot(ringTimeAccel(3:end),ringFilteredDataZAccel, 'b')
 hold off
 title("Ring with Butterworth Filter")
 xlabel("Time in Seconds")
 ylabel("Y-Direction Acceleration m/s^2")
 
-subplot(2,2,3) , plot(middleTime(3:end),middleFilteredDataX, 'r')
+subplot(2,2,3) , plot(middleTimeAccel(3:end),middleFilteredDataXAccel, 'r')
 hold on
-plot(middleTime(3:end),middleFilteredDataY, 'g')
-plot(middleTime(3:end),middleFilteredDataZ, 'b')
+plot(middleTimeAccel(3:end),middleFilteredDataYAccel, 'g')
+plot(middleTimeAccel(3:end),middleFilteredDataZAccel, 'b')
 hold off
 title("Middle with Butterworth Filter")
 xlabel("Time in Seconds")
 ylabel("Y-Direction Acceleration m/s^2")
 
-subplot(2,2,4) , plot(indexTime(3:end),indexFilteredDataX, 'r')
+subplot(2,2,4) , plot(indexTimeAccel(3:end),indexFilteredDataXAccel, 'r')
 hold on
-plot(indexTime(3:end),indexFilteredDataY, 'g')
-plot(indexTime(3:end),indexFilteredDataZ, 'b')
+plot(indexTimeAccel(3:end),indexFilteredDataY, 'g')
+plot(indexTimeAccel(3:end),indexFilteredDataZAccel, 'b')
 hold off
 title("Index with Butterworth Filter")
 xlabel("Time in Seconds")
@@ -98,24 +115,49 @@ ylabel("Y-Direction Acceleration m/s^2")
 
 %% Get Taps
 % Find the average amplitude for each finger's z
-pinkyAverageFilteredZ = sum(abs(pinkyFilteredDataZ))/length(pinkyFilteredDataZ);
-ringAverageFilteredZ = sum(abs(ringFilteredDataZ))/length(ringFilteredDataZ);    
-middleAverageFilteredZ = sum(abs(middleFilteredDataZ))/length(middleFilteredDataZ);    
-indexAverageFilteredZ = sum(abs(indexFilteredDataZ))/length(indexFilteredDataZ);
+pinkyAverageFilteredZAccel = sum(abs(pinkyFilteredDataZAccel))/length(pinkyFilteredDataZAccel);
+ringAverageFilteredZAccel = sum(abs(ringFilteredDataZAccel))/length(ringFilteredDataZAccel);    
+middleAverageFilteredZAccel = sum(abs(middleFilteredDataZAccel))/length(middleFilteredDataZAccel);    
+indexAverageFilteredZAccel = sum(abs(indexFilteredDataZAccel))/length(indexFilteredDataZAccel);
+
+% Find the average amplitude for each finger's x (gyro)
+pinkyAverageFilteredXGyro = sum(abs(pinkyFilteredDataXGyro))/length(pinkyFilteredDataXGyro);
+ringAverageFilteredXGyro = sum(abs(ringFilteredDataXGyro))/length(ringFilteredDataXGyro);    
+middleAverageFilteredXGyro = sum(abs(middleFilteredDataXGyro))/length(middleFilteredDataXGyro);    
+indexAverageFilteredXGyro = sum(abs(indexFilteredDataXGyro))/length(indexFilteredDataXGyro);
+
 % Use this and the z data to find the 30 tap events' z data
-[pinkyIndexOfTapsZ, pinkyValuesTapsZ] = getTaps(pinkyFilteredDataZ, pinkyAverageFilteredZ, 20, pinkyTime, .8);
-[ringIndexOfTapsZ, ringValuesTapsZ] = getTaps(ringFilteredDataZ, ringAverageFilteredZ, 20, ringTime, .8);
-[middleIndexOfTapsZ, middleValuesTapsZ] = getTaps(middleFilteredDataZ, middleAverageFilteredZ, 20, middleTime, .8);
-[indexIndexOfTapsZ, indexValuesTapsZ] = getTaps(indexFilteredDataZ, indexAverageFilteredZ, 20, indexTime, .8);
+[pinkyIndexOfTapsZAccel, pinkyValuesTapsZAccel] = getTaps(pinkyFilteredDataZAccel, pinkyAverageFilteredZAccel, 20, pinkyTimeAccel, 2.35);
+[ringIndexOfTapsZAccel, ringValuesTapsZAccel] = getTaps(ringFilteredDataZAccel, ringAverageFilteredZAccel, 20, ringTimeAccel, 2.1);
+[middleIndexOfTapsZAccel, middleValuesTapsZAccel] = getTaps(middleFilteredDataZAccel, middleAverageFilteredZAccel, 20, middleTimeAccel, 1.58);
+[indexIndexOfTapsZAccel, indexValuesTapsZAccel] = getTaps(indexFilteredDataZAccel, indexAverageFilteredZAccel, 20, indexTimeAccel, 1.58);
+
+% Use this and the z data to find the 30 tap events' x data (gyro)
+[pinkyIndexOfTapsXGyro, pinkyValuesTapsXGyro] = getTaps(pinkyFilteredDataXGyro, pinkyAverageFilteredXGyro, 20, pinkyTimeGyro, 2.78);
+[ringIndexOfTapsXGyro, ringValuesTapsXGyro] = getTaps(ringFilteredDataXGyro, ringAverageFilteredXGyro, 20, ringTimeGyro, 2.7);
+[middleIndexOfTapsXGyro, middleValuesTapsXGyro] = getTaps(middleFilteredDataXGyro, middleAverageFilteredXGyro, 20, middleTimeGyro, 1.78);
+[indexIndexOfTapsXGyro, indexValuesTapsXGyro] = getTaps(indexFilteredDataXGyro, indexAverageFilteredXGyro, 20, indexTimeGyro, 2.2);
+
 % Use z data to get the x and y values
-pinkyValuesTapsX = pinkyFilteredDataX(pinkyIndexOfTapsZ);
-pinkyValuesTapsY = pinkyFilteredDataY(pinkyIndexOfTapsZ);
-ringValuesTapsX = ringFilteredDataX(ringIndexOfTapsZ);
-ringValuesTapsY = ringFilteredDataY(ringIndexOfTapsZ);
-middleValuesTapsX = middleFilteredDataX(middleIndexOfTapsZ);
-middleValuesTapsY = middleFilteredDataY(middleIndexOfTapsZ);
-indexValuesTapsX = indexFilteredDataX(indexIndexOfTapsZ);
-indexValuesTapsY = indexFilteredDataY(indexIndexOfTapsZ);
+pinkyValuesTapsXAccel = pinkyFilteredDataXAccel(pinkyIndexOfTapsZAccel);
+pinkyValuesTapsYAccel = pinkyFilteredDataYAccel(pinkyIndexOfTapsZAccel);
+ringValuesTapsXAccel = ringFilteredDataXAccel(ringIndexOfTapsZAccel);
+ringValuesTapsYAccel = ringFilteredDataYAccel(ringIndexOfTapsZAccel);
+middleValuesTapsXAccel = middleFilteredDataXAccel(middleIndexOfTapsZAccel);
+middleValuesTapsYAccel = middleFilteredDataYAccel(middleIndexOfTapsZAccel);
+indexValuesTapsXAccel = indexFilteredDataXAccel(indexIndexOfTapsZAccel);
+indexValuesTapsYAccel = indexFilteredDataYAccel(indexIndexOfTapsZAccel);
+
+% Use x data to get the y and z values (gyro)
+pinkyValuesTapsZGyro = pinkyFilteredDataZGyro(pinkyIndexOfTapsXGyro);
+pinkyValuesTapsYGyro = pinkyFilteredDataYGyro(pinkyIndexOfTapsXGyro);
+ringValuesTapsZGyro = ringFilteredDataZGyro(ringIndexOfTapsXGyro);
+ringValuesTapsYGyro = ringFilteredDataYGyro(ringIndexOfTapsXGyro);
+middleValuesTapsZGyro = middleFilteredDataZGyro(middleIndexOfTapsXGyro);
+middleValuesTapsYGyro = middleFilteredDataYGyro(middleIndexOfTapsXGyro);
+indexValuesTapsZGyro = indexFilteredDataZGyro(indexIndexOfTapsXGyro);
+indexValuesTapsYGyro = indexFilteredDataYGyro(indexIndexOfTapsXGyro);
+
 % Testing to see if it worked (it does lol)
 % i = 1;
 % zTimeForGraphing = [];
@@ -131,11 +173,14 @@ indexValuesTapsY = indexFilteredDataY(indexIndexOfTapsZ);
 % changes this block will fail :( 
 dataSet = struct;
 % smallestDataSize = min([size(pinkyFilteredDataX, 1), size(ringFilteredDataX, 1), size(middleFilteredDataX, 1), size(indexFilteredDataX, 1)]);
-dataSet.Labels = [ (repelem(["PinkyX"], 30)'); (repelem(["PinkyY"], 30)'); (repelem(["PinkyZ"], 30)');
-    (repelem(["RingX"], 30)');(repelem(["RingY"], 30)'); (repelem(["RingZ"], 30)'); (repelem(["MiddleX"], 30)');  
-    (repelem(["MiddleY"], 30)'); (repelem(["MiddleZ"], 30)'); (repelem(["IndexX"], 30)'); (repelem(["IndexY"], 30)');  (repelem(["IndexZ"], 30)');];
-dataSet.Data = [pinkyValuesTapsX; pinkyValuesTapsY; pinkyValuesTapsZ; ringValuesTapsX; ringValuesTapsY; ringValuesTapsZ; 
-    middleValuesTapsX; middleValuesTapsY; middleValuesTapsZ; indexValuesTapsX; indexValuesTapsY; indexValuesTapsZ;];
+dataSet.Labels = [ (repelem(["PinkyXAccel"], 30)'); (repelem(["PinkyYAccel"], 30)'); (repelem(["PinkyZAccel"], 30)');
+    (repelem(["RingXAccel"], 30)');(repelem(["RingYAccel"], 30)'); (repelem(["RingZAccel"], 30)'); (repelem(["MiddleXAccel"], 30)');  
+    (repelem(["MiddleYAccel"], 30)'); (repelem(["MiddleZAccel"], 30)'); (repelem(["IndexXAccel"], 30)'); (repelem(["IndexYAccel"], 30)');  (repelem(["IndexZAccel"], 30)');(repelem(["PinkyXGyro"], 30)'); (repelem(["PinkyYGyro"], 30)'); (repelem(["PinkyZGyro"], 30)');
+    (repelem(["RingXGyro"], 30)');(repelem(["RingYGyro"], 30)'); (repelem(["RingZGyro"], 30)'); (repelem(["MiddleXGyro"], 30)');  
+    (repelem(["MiddleYGyro"], 30)'); (repelem(["MiddleZGyro"], 30)'); (repelem(["IndexXGyro"], 30)'); (repelem(["IndexYGyro"], 30)');  (repelem(["IndexZGyro"], 30)');];
+dataSet.Data = [pinkyValuesTapsXAccel; pinkyValuesTapsYAccel; pinkyValuesTapsZAccel; ringValuesTapsXAccel; ringValuesTapsYAccel; ringValuesTapsZAccel; 
+    middleValuesTapsXAccel; middleValuesTapsYAccel; middleValuesTapsZAccel; indexValuesTapsXAccel; indexValuesTapsYAccel; indexValuesTapsZAccel;pinkyValuesTapsXGyro; pinkyValuesTapsYGyro; pinkyValuesTapsZGyro; ringValuesTapsXGyro; ringValuesTapsYGyro; ringValuesTapsZGyro; 
+    middleValuesTapsXGyro; middleValuesTapsYGyro; middleValuesTapsZGyro; indexValuesTapsXGyro; indexValuesTapsYGyro; indexValuesTapsZGyro;];
 
 %% Make images (using matlab function provided)
 parentDir = fullfile(tempdir);
@@ -221,7 +266,7 @@ r = size(data,1); % Row number
 for ii = 1:r % For every row
     cfs = abs(fb.wt(data(ii,:)));                                 % Get CWT Transform for row
     im = ind2rgb(im2uint8(rescale(cfs)),jet(128));                % Create imagefile
-    
+    class(labels)
     imgLoc = fullfile(imageRoot,char(labels(ii)));                % Get name of folder where the image is going
     imFileName = strcat(char(labels(ii)),'_',num2str(ii),'.jpg'); % create file name
     imwrite(imresize(im,[224 224]),fullfile(imgLoc,imFileName));  % Write image file
@@ -244,11 +289,19 @@ end
 
 
 
-function [xData, yData, zData, timeData] = setUp(dataSet)
+function [xData, yData, zData, timeData] = setUpAccel(dataSet)
     xData = dataSet.x(1:end-15);
     yData = dataSet.y(1:end-15);
     zData = dataSet.z(1:end-15);
     zData = zData - 9;                  % Get rid of gravity
+    timeData = dataSet.time(1:end-15); 
+    timeData = timeData-timeData(1);        % Set starting time to 0
+    timeData = timeData/1e+9;           % Change time to seconds
+end
+function [xData, yData, zData, timeData] = setUpGyro(dataSet)
+    xData = dataSet.x(1:end-15);
+    yData = dataSet.y(1:end-15);
+    zData = dataSet.z(1:end-15);
     timeData = dataSet.time(1:end-15); 
     timeData = timeData-timeData(1);        % Set starting time to 0
     timeData = timeData/1e+9;           % Change time to seconds

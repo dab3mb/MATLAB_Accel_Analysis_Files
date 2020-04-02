@@ -145,7 +145,7 @@ averageFilteredZ = sum(abs(filteredDataZ))/length(filteredDataZ);
 % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 % Use z data to find 'events' or 'taps'
-[zTimeIndex,zData,sampleZ]= getTaps(filteredDataZ, averageFilteredZ, 28, time, 1.7, whichFinger);                  
+[zTimeIndex,zData,sampleZ]= getTaps(filteredDataZ, averageFilteredZ, 28, time, 1.2, whichFinger);                
 sampleZ.Properties.VariableNames = {'AccelFreqDataZ' 'AccelFingerString'};
 
 % Use 'event' or 'tap' times from z (zTime) to get the data for x & y
@@ -179,7 +179,6 @@ ylabel("Acceleration m/s^2")
 
 
 % ---- Write our final file -----
-Final_Model_Accel_RING30
 fileName = 'accelData'+ fingerNumber;
 save(fileName , 'Final_Model_Accel_RING30')
 

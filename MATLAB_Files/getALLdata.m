@@ -1,0 +1,10 @@
+pinkyCreateCSVAccel
+pinkyCreateCSVGyro
+ringCreateCSVAccel
+ringCreateCSVGyro
+middleCreateCSVAccel
+middleCreateCSVGyro
+indexCreateCSVAccel
+indexCreateCSVGyro
+testingCreateCSVAccel
+testingCreateCSVGyro
